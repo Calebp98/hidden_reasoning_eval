@@ -15,6 +15,8 @@ def view_pickle(filename, num_samples=3):
             print("-" * 50)
 
 # View all three files
-view_pickle('direct_answerable.pkl')
-view_pickle('cot_answerable.pkl')
-view_pickle('unsolvable.pkl')
+
+filename = "MMLU-Pro_claude_3_5_sonnet_20241022/"
+view_pickle(filename + 'direct_answerable.pkl')
+view_pickle(filename + 'cot_answerable.pkl')
+view_pickle(filename + 'unsolvable.pkl')
