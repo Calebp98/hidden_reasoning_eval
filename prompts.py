@@ -36,10 +36,10 @@ Follow the GSM8K format:
 
 # Direct answer version
 GSM8K_DIRECT_SYSTEM = """You are a mathematical problem solver. 
-Always provide your final answer in the format: The answer is #### <number>
+Always provide your final answer in the format: The answer is #### <number>. Make sure to include ####
 Do not show any work or explanation."""
 
 # Or in your user prompt:
-GSM8K_DIRECT_PROMPT = """Solve this math problem and provide only the numeric answer in the format 'The answer is #### <number>':
+GSM8K_DIRECT_PROMPT = """Solve this math problem and provide only the numeric answer in the format.':
 
 {question}"""

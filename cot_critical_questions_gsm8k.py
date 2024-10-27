@@ -18,12 +18,12 @@ load_dotenv()
 CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
 
 MODEL = "claude-3-5-sonnet-20241022"
-DATASET_NAME = "openai/gsm8k"
+DATASET_NAME = "gsm8k"
 
 
 def get_answer_direct(question: str, client: anthropic.Anthropic) -> Dict:
     """Get Claude's direct answer for a question without Chain of Thought reasoning."""
-    print("...getting direct answer")
+    # print("...getting direct answer")
 
     prompt = GSM8K_DIRECT_PROMPT.format(question=question)
 
@@ -33,7 +33,6 @@ def get_answer_direct(question: str, client: anthropic.Anthropic) -> Dict:
         system=GSM8K_DIRECT_SYSTEM,
         messages=[
             {"role": "user", "content": prompt},
-            {"role": "assistant", "content": "The answer is ####"},
         ],
         temperature=0.1,
     )
@@ -44,6 +43,11 @@ def get_answer_direct(question: str, client: anthropic.Anthropic) -> Dict:
     match = re.search(r"####\s*(\d+)", response)
     predicted_answer = int(match.group(1)) if match else None
 
+    # print("direct answer")
+    # print(response)
+    # print(match)
+    # print(predicted_answer)
+
     return {
         "question": question,
         "claude_response": response,
@@ -53,7 +57,7 @@ def get_answer_direct(question: str, client: anthropic.Anthropic) -> Dict:
 
 def get_answer_cot(question: str, client: anthropic.Anthropic) -> Dict:
     """Get Claude's answer for a question using Chain of Thought reasoning."""
-    print("...getting cot answer")
+    # print("...getting cot answer")
 
     prompt = GSM8K_COT_PROMPT.format(question=question)
 
@@ -109,7 +113,7 @@ def main():
         # Try direct answer first
         result = get_answer_direct(question, client)
         result["correct_answer"] = correct_answer
-        print_result(result)
+        # print_result(result)
 
         if result["predicted_answer"] == result["correct_answer"]:
             direct_answerable.append(item)
@@ -117,14 +121,14 @@ def main():
             # Try with Chain of Thought
             result_cot = get_answer_cot(question, client)
             result_cot["correct_answer"] = correct_answer
-            print_result(result_cot)
+            # print_result(result_cot)
 
             if result_cot["predicted_answer"] == result_cot["correct_answer"]:
                 cot_answerable.append(item)
             else:
                 unsolvable.append(item)
                 print("\nFailed to solve:")
-                print_result(result_cot)
+                # print_result(result_cot)
 
     # Create folder name using dataset and model
     folder_name = f"{DATASET_NAME}_{MODEL.replace('-', '_')}"

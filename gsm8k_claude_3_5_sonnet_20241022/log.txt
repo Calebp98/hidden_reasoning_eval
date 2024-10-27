@@ -1,0 +1,4 @@
+Dataset created on: 2024-10-27 15:56:24
+Number of direct answerable: 71
+Number of CoT answerable: 28
+Number of unsolvable: 1
