@@ -29,7 +29,7 @@ def get_answer_direct(question: str, client: anthropic.Anthropic) -> Dict:
 
     message = client.messages.create(
         model=MODEL,
-        max_tokens=1024,
+        max_tokens=30,
         system=GSM8K_DIRECT_SYSTEM,
         messages=[
             {"role": "user", "content": prompt},

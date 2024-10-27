@@ -38,7 +38,7 @@ def get_answer_direct(
 
     message = client.messages.create(
         model=MODEL,
-        max_tokens=1024,
+        max_tokens=30,
         system=DIRECT_SYSTEM,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.1,
