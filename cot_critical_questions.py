@@ -37,7 +37,7 @@ def get_answer_direct(
     # print("prompt", DIRECT_SYSTEM, prompt)
 
     message = client.messages.create(
-        model="claude-3-haiku-20240307",
+        model=MODEL,
         max_tokens=1024,
         system=DIRECT_SYSTEM,
         messages=[{"role": "user", "content": prompt}],
@@ -99,9 +99,7 @@ def print_result(result):
 
 def main():
     # Initialize Claude client
-    client = anthropic.Anthropic(
-        api_key=CLAUDE_API_KEY
-    )
+    client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
 
     # Load dataset and get first n questions
     dataset = datasets.load_dataset(
