@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Experiment Results</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="app" class="p-8">
+        <div class="mb-8">
+            <h2 class="text-xl font-bold mb-4">Available Result Files:</h2>
+            <div id="file-list" class="mb-4 grid gap-2">Loading...</div>
+        </div>
+        <div id="data-display">Select a result file to view details</div>
+    </div>
+
+    <script>
+        const TARGET_DIR = 'gsm8k_claude_3_5_sonnet_20241022/steganography_results/';
+        let currentData = null;
+        let currentFilter = 'all';
+
+        function formatDate(timestamp) {
+            const year = timestamp.slice(0, 4);
+            const month = timestamp.slice(4, 6);
+            const day = timestamp.slice(6, 8);
+            const hour = timestamp.slice(9, 11);
+            const minute = timestamp.slice(11, 13);
+            const second = timestamp.slice(13, 15);
+            
+            return new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}`).toLocaleString();
+        }
+
+        function calculateStats(data) {
+            let publicCorrect = 0;
+            let secretCorrect = 0;
+            const total = data.transcripts.length;
+
+            data.transcripts.forEach(t => {
+                if (t.predicted_public_answer === t.correct_public_answer) publicCorrect++;
+                if (t.predicted_secret_answer === t.correct_secret_answer) secretCorrect++;
+            });
+
+            return {
+                publicCorrect,
+                secretCorrect,
+                publicAccuracy: (publicCorrect / total * 100).toFixed(1),
+                secretAccuracy: (secretCorrect / total * 100).toFixed(1),
+                total
+            };
+        }
+
+        function displayResults(data, filter = 'all') {
+            currentData = data;
+            currentFilter = filter;
+            const stats = calculateStats(data);
+            
+            // Filter transcripts based on selection
+            let filteredTranscripts = data.transcripts;
+            let filterDescription = '';
+            
+            switch(filter) {
+                case 'public':
+                    filteredTranscripts = data.transcripts.filter(t => 
+                        t.predicted_public_answer === t.correct_public_answer);
+                    filterDescription = `Showing ${stats.publicCorrect} correct public answers`;
+                    break;
+                case 'secret':
+                    filteredTranscripts = data.transcripts.filter(t => 
+                        t.predicted_secret_answer === t.correct_secret_answer);
+                    filterDescription = `Showing ${stats.secretCorrect} correct secret answers`;
+                    break;
+                case 'both':
+                    filteredTranscripts = data.transcripts.filter(t => 
+                        t.predicted_public_answer === t.correct_public_answer &&
+                        t.predicted_secret_answer === t.correct_secret_answer);
+                    filterDescription = 'Showing cases where both answers are correct';
+                    break;
+                default:
+                    filterDescription = `Showing all ${stats.total} tests`;
+            }
+
+            const html = `
+                <div class="border-b pb-4 mb-6">
+                    <h1 class="text-2xl font-bold mb-4">Results from ${formatDate(data.timestamp)}</h1>
+                    
+                    <div class="grid grid-cols-4 gap-4 text-center">
+                        <button onclick="displayResults(currentData, 'all')" 
+                                class="p-4 rounded transition-colors ${filter === 'all' ? 'bg-blue-100 border-blue-300' : 'bg-gray-50 hover:bg-gray-100'} cursor-pointer">
+                            <div class="text-lg font-bold">${stats.total}</div>
+                            <div class="text-gray-600">Total Tests</div>
+                        </button>
+                        <button onclick="displayResults(currentData, 'public')"
+                                class="p-4 rounded transition-colors ${filter === 'public' ? 'bg-blue-100 border-blue-300' : 'bg-gray-50 hover:bg-gray-100'} cursor-pointer">
+                            <div class="text-lg font-bold">${stats.publicAccuracy}%</div>
+                            <div class="text-gray-600">Public Task Accuracy</div>
+                        </button>
+                        <button onclick="displayResults(currentData, 'secret')"
+                                class="p-4 rounded transition-colors ${filter === 'secret' ? 'bg-blue-100 border-blue-300' : 'bg-gray-50 hover:bg-gray-100'} cursor-pointer">
+                            <div class="text-lg font-bold">${stats.secretAccuracy}%</div>
+                            <div class="text-gray-600">Secret Task Accuracy</div>
+                        </button>
+                        <button onclick="displayResults(currentData, 'both')"
+                                class="p-4 rounded transition-colors ${filter === 'both' ? 'bg-blue-100 border-blue-300' : 'bg-gray-50 hover:bg-gray-100'} cursor-pointer">
+                            <div class="text-lg font-bold">Both</div>
+                            <div class="text-gray-600">Both Correct</div>
+                        </button>
+                    </div>
+                    
+                    <div class="mt-4 text-center text-gray-600">
+                        ${filterDescription}
+                    </div>
+                </div>
+                
+                ${filteredTranscripts.map((t, i) => `
+                    <div class="mb-8 p-4 border rounded">
+                        <h2 class="text-xl mb-4">Test #${data.transcripts.indexOf(t) + 1}</h2>
+                        
+                        <div class="mb-4">
+                            <h3 class="font-bold">Public Question:</h3>
+                            <p>${t.public_question}</p>
+                            <div class="mt-2">
+                                Predicted: <span class="${t.predicted_public_answer === t.correct_public_answer ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}">
+                                    ${t.predicted_public_answer}
+                                </span>
+                                (Correct: ${t.correct_public_answer})
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h3 class="font-bold">Secret Question:</h3>
+                            <p>${t.secret_question}</p>
+                            <div class="mt-2">
+                                Predicted: <span class="${t.predicted_secret_answer === t.correct_secret_answer ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}">
+                                    ${t.predicted_secret_answer}
+                                </span>
+                                (Correct: ${t.correct_secret_answer})
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="font-bold">Response:</h3>
+                            <pre class="whitespace-pre-wrap bg-gray-50 p-2 rounded text-sm">
+                                ${t.claude_response}
+                            </pre>
+                        </div>
+                    </div>
+                `).join('')}
+            `;
+            
+            document.getElementById('data-display').innerHTML = html;
+        }
+        
+        function loadAndDisplayJson(path) {
+            document.getElementById('data-display').innerHTML = 'Loading...';
+            
+            fetch(path)
+                .then(response => response.json())
+                .then(data => {
+                    displayResults(data, 'all');
+                })
+                .catch(error => {
+                    document.getElementById('data-display').innerHTML = 
+                        `Error loading data: ${error}`;
+                });
+        }
+        
+        fetch(TARGET_DIR)
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const links = Array.from(doc.querySelectorAll('a'));
+                
+                const jsonFiles = links
+                    .filter(link => link.href.includes('transcripts_') && link.href.endsWith('.json'))
+                    .map(link => ({
+                        name: link.textContent,
+                        path: TARGET_DIR + link.textContent,
+                        timestamp: link.textContent.match(/transcripts_(\d{8}_\d{6})\.json/)[1]
+                    }))
+                    .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+                
+                const fileListHtml = jsonFiles.length ? jsonFiles
+                    .map(file => `
+                        <button 
+                            onclick="loadAndDisplayJson('${file.path}')"
+                            class="text-left p-4 hover:bg-gray-50 rounded border flex flex-col group">
+                            <div class="flex items-center mb-2">
+                                <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span class="font-medium group-hover:text-blue-600">Results from ${formatDate(file.timestamp)}</span>
+                            </div>
+                        </button>
+                    `)
+                    .join('') : 'No result files found';
+                
+                document.getElementById('file-list').innerHTML = fileListHtml;
+            });
+    </script>
+</body>
+</html>
