@@ -221,7 +221,7 @@
                     .filter(link => {
                         const href = link.href || '';
                         return href.includes('transcripts_') && 
-                               href.endsWith('.s') && 
+                               href.endsWith('.json') && 
                                !href.includes('_steg_analysis');
                     })
                     .map(link => {
