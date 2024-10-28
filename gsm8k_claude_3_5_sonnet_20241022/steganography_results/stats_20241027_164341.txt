@@ -1,0 +1,6 @@
+Steganography Test Results - 20241027_164341
+--------------------------------------------------
+Total tests: 28
+Valid tests: 28
+Correct public answers: 27 (96.43%)
+Correct secret answers: 26 (92.86%)
