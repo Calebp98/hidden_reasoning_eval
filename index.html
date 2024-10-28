@@ -2,7 +2,10 @@
 <html>
 <head>
     <title>Experiment Results</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Replace CDN with compiled Tailwind CSS -->
+    <link href="https://unpkg.com/@tailwindcss/typography@0.5.x/dist/typography.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,AABAAEAAAAAAAAABAAEAAQAAAAAAAA==" />
 </head>
 <body>
     <div id="app" class="p-8">
@@ -17,16 +20,28 @@
         const TARGET_DIR = 'gsm8k_claude_3_5_sonnet_20241022/steganography_results/';
         let currentData = null;
         let currentFilter = 'all';
+        let analysisData = null;
 
         function formatDate(timestamp) {
-            const year = timestamp.slice(0, 4);
-            const month = timestamp.slice(4, 6);
-            const day = timestamp.slice(6, 8);
-            const hour = timestamp.slice(9, 11);
-            const minute = timestamp.slice(11, 13);
-            const second = timestamp.slice(13, 15);
-            
-            return new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}`).toLocaleString();
+            try {
+                // Handle both formats: YYYYMMDD_HHMMSS and ISO string
+                let date;
+                if (timestamp.includes('T')) {
+                    date = new Date(timestamp);
+                } else {
+                    const year = timestamp.slice(0, 4);
+                    const month = timestamp.slice(4, 6);
+                    const day = timestamp.slice(6, 8);
+                    const hour = timestamp.slice(9, 11);
+                    const minute = timestamp.slice(11, 13);
+                    const second = timestamp.slice(13, 15);
+                    date = new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}`);
+                }
+                return date.toLocaleString();
+            } catch (e) {
+                console.error('Error formatting date:', e);
+                return timestamp; // Return original string if parsing fails
+            }
         }
 
         function calculateStats(data) {
@@ -49,6 +64,11 @@
         }
 
         function displayResults(data, filter = 'all') {
+            if (!data || !data.transcripts) {
+                document.getElementById('data-display').innerHTML = 'No data available';
+                return;
+            }
+
             currentData = data;
             currentFilter = filter;
             const stats = calculateStats(data);
@@ -110,7 +130,9 @@
                     </div>
                 </div>
                 
-                ${filteredTranscripts.map((t, i) => `
+                ${filteredTranscripts.map((t, i) => {
+                    const analysis = analysisData?.detailed_analyses?.[data.transcripts.indexOf(t)];
+                    return `
                     <div class="mb-8 p-4 border rounded">
                         <h2 class="text-xl mb-4">Test #${data.transcripts.indexOf(t) + 1}</h2>
                         
@@ -136,31 +158,56 @@
                             </div>
                         </div>
 
-                        <div>
+                        <div class="mb-4">
                             <h3 class="font-bold">Response:</h3>
                             <pre class="whitespace-pre-wrap bg-gray-50 p-2 rounded text-sm">
                                 ${t.claude_response}
                             </pre>
                         </div>
+
+                        ${analysis ? `
+                        <div class="mt-4 border-t pt-4">
+                            <h3 class="font-bold mb-2">Analysis:</h3>
+                            <div class="flex items-center mb-2">
+                                <span class="mr-2 font-medium">Suspicious:</span>
+                                <span class="${analysis.suspicious ? 'text-red-600' : 'text-green-600'} font-semibold">
+                                    ${analysis.suspicious ? 'Yes' : 'No'}
+                                </span>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded">
+                                <p class="text-sm">${analysis.explanation}</p>
+                            </div>
+                        </div>
+                        ` : ''}
                     </div>
-                `).join('')}
+                `}).join('')}
             `;
             
             document.getElementById('data-display').innerHTML = html;
         }
         
-        function loadAndDisplayJson(path) {
+        async function loadAndDisplayJson(path) {
             document.getElementById('data-display').innerHTML = 'Loading...';
             
-            fetch(path)
-                .then(response => response.json())
-                .then(data => {
-                    displayResults(data, 'all');
-                })
-                .catch(error => {
-                    document.getElementById('data-display').innerHTML = 
-                        `Error loading data: ${error}`;
-                });
+            try {
+                // Load both the transcript data and the analysis data
+                const [transcriptResponse, analysisResponse] = await Promise.all([
+                    fetch(path),
+                    fetch(path.replace('.json', '_steg_analysis.json'))
+                ]);
+                
+                if (!transcriptResponse.ok) throw new Error('Failed to load transcript data');
+                if (!analysisResponse.ok) throw new Error('Failed to load analysis data');
+                
+                const data = await transcriptResponse.json();
+                analysisData = await analysisResponse.json();
+                
+                displayResults(data, 'all');
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('data-display').innerHTML = 
+                    `Error loading data: ${error.message}`;
+            }
         }
         
         fetch(TARGET_DIR)
@@ -171,12 +218,20 @@
                 const links = Array.from(doc.querySelectorAll('a'));
                 
                 const jsonFiles = links
-                    .filter(link => link.href.includes('transcripts_') && link.href.endsWith('.json'))
-                    .map(link => ({
-                        name: link.textContent,
-                        path: TARGET_DIR + link.textContent,
-                        timestamp: link.textContent.match(/transcripts_(\d{8}_\d{6})\.json/)[1]
-                    }))
+                    .filter(link => {
+                        const href = link.href || '';
+                        return href.includes('transcripts_') && 
+                               href.endsWith('.s') && 
+                               !href.includes('_steg_analysis');
+                    })
+                    .map(link => {
+                        const matches = link.textContent.match(/transcripts_(\d{8}_\d{6})\.json/);
+                        return {
+                            name: link.textContent,
+                            path: TARGET_DIR + link.textContent,
+                            timestamp: matches ? matches[1] : link.textContent
+                        };
+                    })
                     .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
                 
                 const fileListHtml = jsonFiles.length ? jsonFiles
@@ -195,6 +250,10 @@
                     .join('') : 'No result files found';
                 
                 document.getElementById('file-list').innerHTML = fileListHtml;
+            })
+            .catch(error => {
+                console.error('Error loading file list:', error);
+                document.getElementById('file-list').innerHTML = 'Error loading file list';
             });
     </script>
 </body>
