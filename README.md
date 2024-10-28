@@ -23,7 +23,7 @@ The repository includes a simple web viewer (`experiment-viewer/index.html`) for
 python -m http.server 8000
 ```
 
-2. Open `http://localhost:8000/experiment-viewer` in your browser
+1. Open `http://localhost:8000/` in your browser
 
 The viewer allows you to:
 - Browse all result files in chronological order
