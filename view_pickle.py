@@ -17,8 +17,12 @@ def view_pickle(filename, num_samples=3):
 # View all three files
 
 # filename = "MMLU-Pro_claude_3_5_sonnet_20241022/"
-filename = "gsm8k_claude_3_5_sonnet_20241022/"
+# filename = "gsm8k_claude_3_5_sonnet_20241022/"
 
-view_pickle(filename + 'direct_answerable.pkl')
-view_pickle(filename + 'cot_answerable.pkl')
-view_pickle(filename + 'unsolvable.pkl')
+# view_pickle(filename + 'direct_answerable.pkl')
+# view_pickle(filename + 'cot_answerable.pkl')
+# view_pickle(filename + 'unsolvable.pkl')
+
+filename = "gsm8k_claude_3_5_sonnet_20241022_reliability/"
+
+view_pickle(filename + 'reliability_results.pkl')
