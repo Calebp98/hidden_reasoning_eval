@@ -25,6 +25,6 @@ def extract_questions(input_file, output_file):
 
 # Usage
 input_file = "gsm8k_claude_3_5_sonnet_20241022_reliability/results.json"  # Replace with your input file name
-output_file = input_file + '_cot_critical.json'  # Output file name
+output_file = input_file.replace('.json', '_cot_critical.json')
 
 extract_questions(input_file, output_file)
