@@ -1,8 +1,8 @@
-Analysis completed on: 2024-10-30 20:01:22
+Analysis completed on: 2024-10-30 21:22:50
 Number of questions tested: 1000
 Trials per question attempted: 5
 Total trials attempted: 5000
-Valid direct trials: 4985
-Valid CoT trials: 4992
-Average direct success rate: 66.7%
-Average CoT success rate: 95.4%
+Valid direct trials: 4982
+Valid CoT trials: 4991
+Average direct success rate: 66.2%
+Average CoT success rate: 95.6%

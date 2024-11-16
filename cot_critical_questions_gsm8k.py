@@ -27,6 +27,7 @@ MAX_RETRIES = 3
 POLL_INTERVAL = 5  # seconds
 
 
+
 def setup_environment() -> Optional[str]:
     """Setup and validate environment variables."""
     load_dotenv()
@@ -88,7 +89,7 @@ def create_all_requests(questions: List[Dict[str, Any]]) -> List[Request]:
                                     ),
                                 }
                             ],
-                            temperature=0.1,
+                            temperature=0.7,
                         ),
                     )
                 )
@@ -120,7 +121,7 @@ def create_all_requests(questions: List[Dict[str, Any]]) -> List[Request]:
                                     ),
                                 }
                             ],
-                            temperature=0.1,
+                            temperature=0.7,
                         ),
                     )
                 )
@@ -198,6 +199,7 @@ def process_results(
     final_results = []
     skipped_questions = 0
 
+
     for i in range(num_questions):
         try:
             # Extract correct answer from the GSM8K answer text
@@ -230,6 +232,7 @@ def process_results(
                 # Process direct trials
                 if direct_id in all_results:
                     trial_result = all_results[direct_id]
+                    # claude_response = trial_result["claude_response"]
                     if trial_result["predicted_answer"] is not None:
                         question_results["direct_trials"].append(trial_result)
                         valid_direct_trials += 1
@@ -303,6 +306,7 @@ def save_results(folder_name: str, final_results: List[Dict[str, Any]]) -> None:
     simple_results = [
         {
             "question": result["question"],
+            "answer": result["answer"],
             "direct_success_rate": result["direct_success_rate"]
             if result["direct_success_rate"] is not None
             else "N/A",
@@ -443,6 +447,9 @@ def main():
             print("Error: No results received from batch processing")
 
             return
+
+        with open(f"{folder_name}/transcript.json", "w", encoding="utf-8") as f:
+            json.dump(all_results, f, indent=2, ensure_ascii=False)
 
         # Process and save results
         final_results = process_results(

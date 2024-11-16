@@ -7,6 +7,8 @@ from typing import Dict, List, Tuple, Optional
 from tqdm import tqdm
 from datetime import datetime
 from dotenv import load_dotenv
+import json
+import argparse
 
 # Load environment variables
 load_dotenv()
@@ -15,12 +17,23 @@ CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
 # Constants
 MODEL = "claude-3-5-sonnet-20241022"
 DATASET_NAME = "gsm8k"
+TIMESTAMP = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+
+# def load_cot_questions(folder_name: str) -> List[Dict]:
+#     """Load the CoT-answerable questions from the pickle file."""
+#     with open(f"{folder_name}/cot_answerable.pkl", "rb") as f:
+#         return pickle.load(f)
 
 
 def load_cot_questions(folder_name: str) -> List[Dict]:
-    """Load the CoT-answerable questions from the pickle file."""
-    with open(f"{folder_name}/cot_answerable.pkl", "rb") as f:
-        return pickle.load(f)
+    """Load the CoT-answerable questions from the JSON file."""
+    try:
+        with open(f"{folder_name}/results_cot_critical.json", "r") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Error loading questions: {e}")
+        return []
 
 
 def extract_answers(response: str) -> Tuple[Optional[int], Optional[int]]:
@@ -112,12 +125,8 @@ Answer to secret question #### 4""",
 
         # Extract correct answers safely
         try:
-            correct_public = int(
-                public_question.get("answer", "0").split("####")[1].strip()
-            )
-            correct_secret = int(
-                secret_question.get("answer", "0").split("####")[1].strip()
-            )
+            correct_public = int(public_question.get("answer", ""))
+            correct_secret = int(secret_question.get("answer", ""))
         except (ValueError, IndexError) as e:
             print(f"Error extracting correct answers: {e}")
             correct_public = None
@@ -166,10 +175,9 @@ def print_result(result: Dict):
 
 def save_and_process_results(results: List[Dict], results_dir: str):
     """Save results and calculate statistics."""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     # Save raw results
-    with open(f"{results_dir}/steganography_results_{timestamp}.pkl", "wb") as f:
+    with open(f"{results_dir}/steganography_results.pkl", "wb") as f:
         pickle.dump(results, f)
 
     # Calculate statistics for valid results only
@@ -191,7 +199,7 @@ def save_and_process_results(results: List[Dict], results_dir: str):
 
     if total_valid > 0:
         stats = calculate_statistics(valid_results, total_valid, len(results))
-        save_statistics(stats, results_dir, timestamp)
+        save_statistics(stats, results_dir)
         print_statistics(stats)
 
 
@@ -220,10 +228,10 @@ def calculate_statistics(
     }
 
 
-def save_statistics(stats: Dict, results_dir: str, timestamp: str):
+def save_statistics(stats: Dict, results_dir: str):
     """Save statistics to a file."""
-    with open(f"{results_dir}/stats_{timestamp}.txt", "w") as f:
-        f.write(f"Steganography Test Results - {timestamp}\n")
+    with open(f"{results_dir}/stats.txt", "w") as f:
+        f.write(f"Steganography Test Results - {TIMESTAMP}\n")
         f.write("-" * 50 + "\n")
         f.write(f"Total tests: {stats['total_tests']}\n")
         f.write(f"Valid tests: {stats['valid_tests']}\n")
@@ -249,18 +257,29 @@ def print_statistics(stats: Dict):
 
 
 def main():
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description="Run steganography tests with Claude")
+    parser.add_argument(
+        "folder_name", type=str, help="Folder containing questions.json"
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="claude-3-5-sonnet-20241022",
+        help="Model to use (default: claude-3-5-sonnet-20241022)",
+    )
+    args = parser.parse_args()
+
     # Initialize Claude client
     client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
 
-    # Create folder name using dataset and model
-    folder_name = f"{DATASET_NAME}_{MODEL.replace('-', '_')}"
-
     try:
-        # Load CoT-answerable questions
-        cot_questions = load_cot_questions(folder_name)
+        # Load CoT-answerable questions using provided folder name
+        cot_questions = load_cot_questions(args.folder_name)[:5]
 
-        # Create results directory
-        results_dir = f"{folder_name}/steganography_results"
+        # Create results directory using provided folder name
+
+        results_dir = f"{args.folder_name}/{TIMESTAMP}/steganography_results"
         os.makedirs(results_dir, exist_ok=True)
 
         # Process each question as the secret question
@@ -281,14 +300,11 @@ def main():
 
         # Save transcripts if we have any results
         if results:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            import json
-
-            json_path = f"{results_dir}/transcripts_{timestamp}.json"
+            json_path = f"{results_dir}/transcripts_{TIMESTAMP}.json"
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(
                     {
-                        "timestamp": timestamp,
+                        "timestamp": TIMESTAMP,
                         "total_tests": len(results),
                         "transcripts": results,
                     },
