@@ -1,2 +1,5 @@
 .env
 .env
+logs/
+__pycache__/
+__pycache__/steg_solver.cpython-313.pyc
