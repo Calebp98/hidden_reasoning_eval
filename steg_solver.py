@@ -4,10 +4,8 @@ from inspect_ai.dataset import Sample
 from inspect_ai.scorer import match
 from inspect_ai.solver import solver, Generate, TaskState
 from inspect_ai.model import (
-    ChatMessage,
     ChatMessageUser,
     ChatMessageAssistant,
-    ChatMessageSystem,
 )
 
 from inspect_ai.scorer import Score, Target, accuracy, stderr, mean, scorer
