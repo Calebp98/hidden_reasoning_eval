@@ -27,7 +27,7 @@ def create_paired_dataset(dataset, num_samples):
 
         # Create a Sample object
         sample = Sample(
-            input="dummy input",
+            input=f"public_question: {public_question.input}\nsecret_question: {secret_question.input}",
             metadata={
                 "public_question": public_question.input,
                 "secret_question": secret_question.input,
