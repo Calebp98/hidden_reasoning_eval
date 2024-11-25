@@ -31,6 +31,10 @@ def create_paired_dataset(dataset, num_samples):
             metadata={
                 "public_question": public_question.input,
                 "secret_question": secret_question.input,
+                "public_answer": public_question.target,
+                "secret_answer": secret_question.target,
+                "public_raw_answer": public_question.metadata['raw_answer'],
+                "secret_raw_answer": secret_question.metadata['raw_answer']
             },
             target=[
                 public_question.target,
